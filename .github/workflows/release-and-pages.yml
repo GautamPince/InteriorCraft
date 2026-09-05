@@ -1,0 +1,43 @@
+name: Create Release & Enable Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  release_and_pages:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create GitHub release and enable Pages
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GH_PAT }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const tag = 'v1.0.0';
+            // Create release
+            await github.rest.repos.createRelease({
+              owner,
+              repo,
+              tag_name: tag,
+              name: tag,
+              body: 'Release ' + tag,
+              draft: false,
+              prerelease: false
+            });
+            core.info(`Created release ${tag}`);
+            // Enable Pages to serve from gh-pages branch
+            await github.request('PUT /repos/{owner}/{repo}/pages', {
+              owner,
+              repo,
+              source: { branch: 'gh-pages', path: '/' }
+            });
+            core.info('Enabled GitHub Pages on branch gh-pages');
+
+# NOTE: Create a repository secret named `GH_PAT` containing a PAT
+# with `repo` scope. After adding the secret, run this workflow
+# manually from the Actions tab (Create Release & Enable Pages).
